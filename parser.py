@@ -30,10 +30,7 @@ def get_args() -> Namespace:
                                        help="Overleaf project ID to backup")
 
     # Backup all command
-    backup_all_parser = subparsers.add_parser("backup-all", help="Backup all Overleaf projects from config to GitLab")
-    backup_all_parser.add_argument("--continue-on-error",
-                                    action="store_true",
-                                    help="Continue with other projects if one fails")
+    # backup_all_parser = subparsers.add_parser("backup-all", help="Backup all Overleaf projects from config to GitLab")
 
     return parser.parse_args()
 
