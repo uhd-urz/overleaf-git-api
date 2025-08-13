@@ -1,93 +1,199 @@
-# urz-sb-fire-overleafgitapi
+# Overleaf to GitLab Backup Tool
 
+Ein Python-Tool zur automatischen Sicherung von Overleaf-Projekten in GitLab-Repositories über die Git-API von Overleaf.
 
+## Beschreibung
 
-## Getting started
+Dieses Tool ermöglicht es, Overleaf-Projekte automatisch als Backup in GitLab-Repositories zu synchronisieren. Es nutzt die Git-API von Overleaf, um Projekte als Git-Repositories zu klonen und diese dann in ein oder mehrere GitLab-Repositories zu pushen.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Features
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- 🔄 Automatische Synchronisation von Overleaf-Projekten mit GitLab
+- 📁 Unterstützung für mehrere Backup-Ziele pro Projekt
+- 🔧 Konfigurierbare Projekt-Mappings über INI-Datei
+- 🧹 Optionale Cache-Bereinigung nach dem Backup
+- 📝 Verbose-Modus für detaillierte Ausgaben
+- 🔐 SSH-basierte Authentifizierung für GitLab
 
-## Add your files
+## Voraussetzungen
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.urz.uni-heidelberg.de/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-overleafgitapi.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.urz.uni-heidelberg.de/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-overleafgitapi/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- Python 3.6+
+- Git
+- SSH-Zugang zu GitLab-Instanzen
+- Zugang zu Overleaf-Projekten
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+1. Repository klonen:
+```bash
+git clone <repository-url>
+cd urz-sb-fire-overleafgitapi
+```
+
+2. Virtuelle Umgebung einrichten und Abhängigkeiten installieren:
+```bash
+make setup
+```
+
+## Konfiguration
+
+### 1. SSH-Konfiguration
+
+Erstellen Sie SSH-Aliase für Ihre GitLab-Instanzen in `~/.ssh/config`:
+
+```
+Host gitlab-urz
+    HostName gitlab.urz.uni-heidelberg.de
+    User git
+    IdentityFile ~/.ssh/id_rsa_gitlab
+```
+
+### 2. Konfigurationsdatei
+
+Erstellen Sie eine Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/config.ini`):
+
+```ini
+[repos]
+# Mapping: Overleaf-Projekt-ID = GitLab-Repository-Pfad(e)
+; noch angemerrt `gitlab-urz` ist ein ssh alias
+689b16659d1d083b3131e989 = gitlab-urz/username/project1.git
+662a5ab30650c57e5355029b = gitlab-urz/username/project2.git, gitlab-urz/backup/project2.git
+```
+
+**Wichtig:** 
+- Die Overleaf-Projekt-ID finden Sie in der URL Ihres Overleaf-Projekts
+- SSH-Keys müssen über `ssh-add` im SSH-Agent geladen sein
+- Mehrere Backup-Ziele können durch Komma getrennt angegeben werden
+
+### 3. Overleaf-Anmeldedaten
+
+Das Tool nutzt Git Credential Helper. Beim ersten Zugriff werden Sie nach Ihren Overleaf-Anmeldedaten gefragt. Diese werden sicher in `~/.gitconfig.d/overleaf` gespeichert.
+
+## Verwendung
+
+### Einzelnes Projekt sichern
+
+```bash
+python main.py backup-single <overleaf-projekt-id>
+```
+
+Beispiel:
+```bash
+python main.py backup-single 689b16659d1d083b3131e989
+```
+
+### Alle konfigurierten Projekte sichern
+
+```bash
+python main.py backup-all
+```
+
+### Optionen
+
+```bash
+python main.py --help
+```
+
+Verfügbare globale Optionen:
+- `--verbose`: Detaillierte Ausgaben aktivieren
+- `--config PATH`: Pfad zur Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/config.ini`)
+- `--cache-dir PATH`: Cache-Verzeichnis (Standard: `~/.local/share/overleaf2gitlab`)
+- `--clean-cache`: Cache nach dem Backup löschen
+
+### Beispiele
+
+```bash
+# Verbose-Modus mit benutzerdefinierter Konfiguration
+python main.py --verbose --config ./my-config.ini backup-single 689b16659d1d083b3131e989
+
+# Alle Projekte mit Cache-Bereinigung
+python main.py --clean-cache backup-all
+
+# Benutzerdefiniertes Cache-Verzeichnis
+python main.py --cache-dir /tmp/overleaf-backup backup-all
+```
+
+## Funktionsweise
+
+1. **Git-Repository-Setup**: Für jedes Overleaf-Projekt wird ein lokales Git-Repository im Cache-Verzeichnis erstellt
+2. **Remote-Konfiguration**: 
+   - `origin`: Overleaf Git-API (`https://git.overleaf.com/<projekt-id>`)
+   - `backup0`, `backup1`, ...: Konfigurierte GitLab-Repositories
+3. **Synchronisation**:
+   - Aktualisierung aller Remotes
+   - Pull vom Overleaf-Repository (versucht `main` und `master` Branches)
+   - Fetch von Tags
+   - Push zu allen Backup-Repositories
+
+## Verzeichnisstruktur
+
+```
+~/.local/share/overleaf2gitlab/    # Cache-Verzeichnis
+├── overleaf_<projekt-id-1>/       # Git-Repository für Projekt 1
+├── overleaf_<projekt-id-2>/       # Git-Repository für Projekt 2
+└── ...
+
+~/.config/overleaf2gitlab/         # Konfiguration
+└── config.ini                     # Haupt-Konfigurationsdatei
+
+~/.gitconfig.d/                    # Git-Anmeldedaten
+└── overleaf                       # Gespeicherte Overleaf-Credentials
+```
+
+## Fehlerbehebung
+
+### Häufige Probleme
+
+1. **SSH-Authentifizierung fehlgeschlagen**
+   - Überprüfen Sie Ihre SSH-Konfiguration und -Keys
+   - Stellen Sie sicher, dass der SSH-Agent läuft: `ssh-add -l`
+
+2. **Overleaf-Anmeldung fehlgeschlagen**
+   - Überprüfen Sie Ihre Anmeldedaten
+   - Löschen Sie `~/.gitconfig.d/overleaf` für eine neue Anmeldung
+
+3. **Projekt nicht gefunden**
+   - Überprüfen Sie die Overleaf-Projekt-ID in der Konfiguration
+   - Stellen Sie sicher, dass Sie Zugriff auf das Projekt haben
+
+### Debug-Modus
+
+Verwenden Sie `--verbose` für detaillierte Ausgaben:
+
+```bash
+python main.py --verbose backup-single <projekt-id>
+```
+
+## Entwicklung
+
+### Projekt-Setup für Entwickler
+
+```bash
+make setup
+```
+
+### Code-Struktur
+
+- `main.py`: Haupt-Einstiegspunkt und Koordination
+- `parser.py`: Argument-Parsing und Validierung
+- `config.py`: Konfigurationsdatei-Handling
+- `backup.py`: Git-Operationen und Backup-Logik
+
+## Lizenz
+
+TODO: geh[Lizenz-Information hier einfügen]
+
+## Autoren
+
+- **Philip Mack** - [philip.mack@urz.uni-heidelberg.de](mailto:philip.mack@urz.uni-heidelberg.de)
+- **URZ-SB-FIRE Team** - Universität Heidelberg
+
+## Beitragen
+
+Beiträge sind willkommen! Bitte erstellen Sie einen Merge Request für Änderungen.
 
 ## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Bei Fragen oder Problemen wenden Sie sich an:
+- **Philip Mack**: [philip.mack@urz.uni-heidelberg.de](mailto:philip.mack@urz.uni-heidelberg.de)
+- **URZ-SB-FIRE Team**: Universität Heidelberg
