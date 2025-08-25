@@ -39,6 +39,8 @@ make setup
 
 ### 1. SSH-Konfiguration
 
+#### SSH-Aliase einrichten
+
 Erstellen Sie SSH-Aliase für Ihre GitLab-Instanzen in `~/.ssh/config`:
 
 ```
@@ -46,6 +48,21 @@ Host gitlab-urz
     HostName gitlab.urz.uni-heidelberg.de
     User git
     IdentityFile ~/.ssh/id_rsa_gitlab
+```
+
+#### SSH-Keys zum SSH-Agent hinzufügen
+
+**Wichtig:** SSH-Keys müssen über `ssh-add` im SSH-Agent geladen sein:
+
+```bash
+# SSH-Agent starten (falls nicht bereits aktiv)
+eval "$(ssh-agent -s)"
+
+# SSH-Key hinzufügen
+ssh-add ~/.ssh/id_rsa_gitlab
+
+# Überprüfen, welche Keys geladen sind
+ssh-add -l
 ```
 
 ### 2. Konfigurationsdatei
@@ -60,14 +77,31 @@ Erstellen Sie eine Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/con
 662a5ab30650c57e5355029b = gitlab-urz/username/project2.git, gitlab-urz/backup/project2.git
 ```
 
-**Wichtig:** 
-- Die Overleaf-Projekt-ID finden Sie in der URL Ihres Overleaf-Projekts
-- SSH-Keys müssen über `ssh-add` im SSH-Agent geladen sein
-- Mehrere Backup-Ziele können durch Komma getrennt angegeben werden
+**Erklärung der Konfiguration:**
+- **Overleaf-Projekt-ID**: Finden Sie in der URL Ihres Overleaf-Projekts (z.B. `https://www.overleaf.com/project/662a5ab30650c57e5355029b`)
+- **GitLab-Repository-Pfad**: Format `ssh-alias/namespace/repository.git`
+- **SSH-Alias**: Muss in `~/.ssh/config` definiert sein (hier: `gitlab-urz`)
+- **Mehrere Ziele**: Durch Komma getrennt für redundante Backups
 
 ### 3. Overleaf-Anmeldedaten
 
-Das Tool nutzt Git Credential Helper. Beim ersten Zugriff werden Sie nach Ihren Overleaf-Anmeldedaten gefragt. Diese werden sicher in `~/.gitconfig.d/overleaf` gespeichert.
+```bash
+# Verzeichnis erstellen
+mkdir -p ~/.gitconfig.d
+
+# Credentials-Datei mit Token erstellen
+cat > ~/.gitconfig.d/overleaf << EOF
+https://git:<OVERLEAF-TOKEN>@git.overleaf.com
+EOF
+
+# Datei absichern
+chmod 600 ~/.gitconfig.d/overleaf
+```
+
+**Sicherheitshinweise:**
+- Die Datei `~/.gitconfig.d/overleaf` sollte nur für Sie lesbar sein (`chmod 600`)
+- Fügen Sie diese Datei niemals zu einem Git-Repository hinzu
+
 
 ## Verwendung
 
