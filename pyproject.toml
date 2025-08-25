@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "overleaf2gitlab"
+version = "1.0.0"
+authors = [
+    {name = "Philip Mack", email = "philip.mack@urz.uni-heidelberg.de"},
+]
+description = "Tool zur automatischen Sicherung von Overleaf-Projekten in GitLab-Repositories"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.scripts]
+overleaf2gitlab = "overleaf2gitlab.main:main"
+
+[project.urls]
+"Homepage" = "https://gitlab.urz.uni-heidelberg.de/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-overleafgitapi"
+"Bug Reports" = "https://gitlab.urz.uni-heidelberg.de/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-overleafgitapi/-/issues"

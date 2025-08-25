@@ -24,15 +24,13 @@ Dieses Tool ermöglicht es, Overleaf-Projekte automatisch als Backup in GitLab-R
 
 ## Installation
 
-1. Repository klonen:
 ```bash
+# Repository klonen
 git clone <repository-url>
 cd urz-sb-fire-overleafgitapi
-```
 
-2. Virtuelle Umgebung einrichten und Abhängigkeiten installieren:
-```bash
-make setup
+# Installation über pip
+pip install .
 ```
 
 ## Konfiguration
@@ -108,24 +106,24 @@ chmod 600 ~/.gitconfig.d/overleaf
 ### Einzelnes Projekt sichern
 
 ```bash
-python main.py backup-single <overleaf-projekt-id>
+overleaf2gitlab backup-single <overleaf-projekt-id>
 ```
 
 Beispiel:
 ```bash
-python main.py backup-single 689b16659d1d083b3131e989
+overleaf2gitlab backup-single 689b16659d1d083b3131e989
 ```
 
 ### Alle konfigurierten Projekte sichern
 
 ```bash
-python main.py backup-all
+overleaf2gitlab backup-all
 ```
 
 ### Optionen
 
 ```bash
-python main.py --help
+overleaf2gitlab --help
 ```
 
 Verfügbare globale Optionen:
