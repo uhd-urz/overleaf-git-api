@@ -17,7 +17,7 @@ def handle_init_command(config_path: str, verbose: bool) -> bool:
     # Always show config path
     expanded_path = os.path.expanduser(config_path)
     print(f"Konfigurationsdatei: {expanded_path}")
-    
+
     # Validate existing config
     is_valid, message = validate_config(config_path, verbose)
     
@@ -27,7 +27,16 @@ def handle_init_command(config_path: str, verbose: bool) -> bool:
     # Start interactive configuration
     return interactive_config_setup(config_path, verbose)
 
-def backup_single_project(overleaf_id: str, available_projects: dict[str, str], cache_dir: str, clean: bool, verbose: bool):
+def backup_single_project(overleaf_id: str, available_projects: dict[str, str], cache_dir: str, clean: bool, verbose: bool) -> bool:
+    """
+    Handle the backup of a single Overleaf project.
+    @param overleaf_id: The Overleaf project ID to back up
+    @param available_projects: A dictionary of available projects
+    @param cache_dir: The directory to use for caching
+    @param clean: Whether to clean the cache before backing up
+    @param verbose: Whether to enable verbose output
+    @return: Success status
+    """
     # check if overleaf id is a key in available_projects
     if overleaf_id not in available_projects:
         print(f"✗ Overleaf-Projekt {overleaf_id} nicht in Konfiguration gefunden")
@@ -41,7 +50,15 @@ def backup_single_project(overleaf_id: str, available_projects: dict[str, str], 
     
     return backup_overleaf_project(overleaf_id, gitlab_paths, cache_dir, clean, verbose)
 
-def backup_all_projects(available_projects: dict[str, str], cache_dir: str, clean: bool, verbose: bool):
+def backup_all_projects(available_projects: dict[str, str], cache_dir: str, clean: bool, verbose: bool) -> bool:
+    """
+    Handle the backup of all Overleaf projects.
+    @param available_projects: A dictionary of available projects
+    @param cache_dir: The directory to use for caching
+    @param clean: Whether to clean the cache before backing up
+    @param verbose: Whether to enable verbose output
+    @return: Success status
+    """
     success_count = 0
     total_count = len(available_projects)
     
@@ -56,7 +73,10 @@ def backup_all_projects(available_projects: dict[str, str], cache_dir: str, clea
     print(f"\nBackup abgeschlossen: {success_count}/{total_count} Projekte erfolgreich")
     return success_count == total_count
 
-def main():
+def main() -> None:
+    """
+    Main entry point for the Overleaf2GitLab CLI.
+    """
     args = get_args()
     
     # Handle config command separately

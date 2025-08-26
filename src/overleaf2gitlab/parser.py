@@ -40,6 +40,11 @@ def get_args() -> Namespace:
 
 
 def check_global_arguments(args: Namespace) -> tuple[bool, str, str, bool, bool]:
+    """
+    Check and validate global command-line arguments.
+    @param args: Parsed command-line arguments
+    @return: (is_valid, config_path, cache_dir_path, clean_cache, verbose)
+    """
     # Check and print global arguments
     if args.verbose:
         print("Verbose mode is enabled")

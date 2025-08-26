@@ -3,14 +3,25 @@ import subprocess
 from pathlib import Path
 
 def mk_cache_overleaf_dir(overleaf_id, cache_dir) -> None:
-    # Create the cache directory for the Overleaf project
+    """Create the cache directory for the Overleaf project.
+    @param overleaf_id: The Overleaf project ID
+    @param cache_dir: The cache directory path
+    """
     os.makedirs(os.path.join(cache_dir, f"overleaf_{overleaf_id}"), exist_ok=True)
 
 def check_cache_overleaf_git_existence(overleaf_id, cache_dir) -> bool:
-    # Check if the Overleaf project directory exists and is a git repository
+    """Check if the Overleaf project directory exists and is a git repository.
+    @param overleaf_id: The Overleaf project ID
+    @param cache_dir: The cache directory path
+    @return: True if the directory exists and is a git repository, False otherwise
+    """
     return os.path.exists(os.path.join(cache_dir, f"overleaf_{overleaf_id}", ".git"))
 
 def mk_cache_overleaf_git_dir(overleaf_id, cache_dir) -> None:
+    """Create the cache directory for the Overleaf project.
+    @param overleaf_id: The Overleaf project ID
+    @param cache_dir: The cache directory path
+    """
     if not check_cache_overleaf_git_existence(overleaf_id, cache_dir):
         # Create directory first
         mk_cache_overleaf_dir(overleaf_id, cache_dir)
@@ -30,7 +41,11 @@ def mk_cache_overleaf_git_dir(overleaf_id, cache_dir) -> None:
         ], cwd=repo_path, check=True)
 
 def get_git_remote_url(repo_path: str, remote_name: str) -> str | None:
-    """Get URL for a specific git remote"""
+    """Get URL for a specific git remote.
+    @param repo_path: The path to the git repository
+    @param remote_name: The name of the remote
+    @return: The URL of the remote or None if not found
+    """
     try:
         result = subprocess.run(
             ["git", "remote", "get-url", remote_name],
@@ -44,7 +59,10 @@ def get_git_remote_url(repo_path: str, remote_name: str) -> str | None:
         return None
 
 def get_all_git_remotes(repo_path: str) -> dict[str, str]:
-    """Get all git remotes with their URLs"""
+    """Get all git remotes with their URLs.
+    @param repo_path: The path to the git repository
+    @return: A dictionary mapping remote names to their URLs
+    """
     try:
         # Get all remote names
         result = subprocess.run(
@@ -73,6 +91,10 @@ def check_cache_overleaf_git_config_valid(overleaf_id: str, gitlab_paths: list[s
     Check if git config in cache is valid:
     - origin remote should point to https://git.overleaf.com/<overleaf_id>
     - backup0, backup1, ... remotes should match gitlab_paths
+    @param overleaf_id: The Overleaf project ID
+    @param gitlab_paths: The list of GitLab repository paths
+    @param cache_dir: The cache directory path
+    @return: True if the config is valid, False otherwise
     """
     repo_path = os.path.join(cache_dir, f"overleaf_{overleaf_id}")
     
@@ -125,7 +147,12 @@ def check_cache_overleaf_git_config_valid(overleaf_id: str, gitlab_paths: list[s
     return True
 
 def setup_git_remotes(overleaf_id: str, gitlab_paths: list[str], cache_dir: str) -> bool:
-    """Setup/update git remotes to match expected configuration"""
+    """Setup/update git remotes to match expected configuration.
+    @param overleaf_id: The Overleaf project ID
+    @param gitlab_paths: The list of GitLab repository paths
+    @param cache_dir: The cache directory path
+    @return: True if the setup was successful, False otherwise
+    """
     repo_path = os.path.join(cache_dir, f"overleaf_{overleaf_id}")
     
     # Ensure git repo exists
@@ -175,7 +202,12 @@ def setup_git_remotes(overleaf_id: str, gitlab_paths: list[str], cache_dir: str)
         return False
 
 def sync_repositories(overleaf_id: str, cache_dir: str, verbose: bool = False) -> bool:
-    """Sync repositories: git remote update -> pull from overleaf -> push to backups"""
+    """Sync repositories: git remote update -> pull from overleaf -> push to backups
+    @param overleaf_id: The Overleaf project ID
+    @param cache_dir: The cache directory path
+    @param verbose: Whether to enable verbose output
+    @return: True if the sync was successful, False otherwise
+    """
     repo_path = os.path.join(cache_dir, f"overleaf_{overleaf_id}")
     
     if not check_cache_overleaf_git_existence(overleaf_id, cache_dir):
@@ -272,7 +304,14 @@ def sync_repositories(overleaf_id: str, cache_dir: str, verbose: bool = False) -
         return False
 
 def backup_overleaf_project(overleaf_id: str, gitlab_paths: list[str], cache_dir: str, clean: bool, verbose: bool = False) -> bool:
-    """Complete backup workflow for a single Overleaf project"""
+    """Complete backup workflow for a single Overleaf project
+    @param overleaf_id: The Overleaf project ID
+    @param gitlab_paths: The list of GitLab repository paths
+    @param cache_dir: The cache directory path
+    @param clean: Whether to clean the cache after backup
+    @param verbose: Whether to enable verbose output
+    @return: True if the backup was successful, False otherwise
+    """
     print(f"\n{'='*60}")
     print(f"Starting backup for Overleaf project: {overleaf_id}")
     print(f"GitLab paths: {gitlab_paths}")

@@ -71,7 +71,9 @@ def validate_config(config_path: str, verbose: bool) -> tuple[bool, str]:
     return True, f"Konfiguration ist gültig ({len(projects)} Projekte)"
 
 def create_config_dir(config_path: str) -> None:
-    """Create config directory if it doesn't exist."""
+    """Create config directory if it doesn't exist.
+    @param config_path: Path to config file
+    """
     expanded_path = os.path.expanduser(config_path)
     config_dir = os.path.dirname(expanded_path)
     
@@ -123,7 +125,9 @@ def add_project_mapping(config_path: str, overleaf_id: str, gitlab_paths: str, v
         return False
 
 def list_existing_mappings(config: configparser.ConfigParser) -> None:
-    """Display existing project mappings."""
+    """Display existing project mappings.
+    @param config: ConfigParser object
+    """
     projects = get_overleaf_projects(config, verbose=False)
     
     if not projects:
@@ -137,7 +141,12 @@ def list_existing_mappings(config: configparser.ConfigParser) -> None:
         print()
 
 def delete_project_mapping(config_path: str, overleaf_id: str, verbose: bool) -> bool:
-    """Delete a project mapping from config."""
+    """Delete a project mapping from config.
+    @param config_path: Path to config file
+    @param overleaf_id: Overleaf project ID
+    @param verbose: Whether to print verbose output
+    @return: Success status
+    """
     try:
         expanded_path = os.path.expanduser(config_path)
         
@@ -169,14 +178,19 @@ def delete_project_mapping(config_path: str, overleaf_id: str, verbose: bool) ->
         return False
 
 def get_user_choice(prompt: str, valid_choices: list[str], allow_empty: bool = False) -> str:
-    """Get user input with validation."""
+    """Get user input with validation.
+    @param prompt: Prompt message to display
+    @param valid_choices: List of valid choices
+    @param allow_empty: Whether to allow empty input
+    @return: User's choice
+    """
     while True:
         try:
             choice = input(prompt).strip().lower()
             
             if allow_empty and not choice:
                 return ""
-            
+
             if choice in [c.lower() for c in valid_choices]:
                 return choice
             
@@ -186,7 +200,11 @@ def get_user_choice(prompt: str, valid_choices: list[str], allow_empty: bool = F
             return "exit"
 
 def add_single_mapping(config_path: str, verbose: bool) -> tuple[bool, str, str]:
-    """Add a single project mapping. Returns (success, overleaf_id, gitlab_paths)."""
+    """Add a single project mapping. Returns (success, overleaf_id, gitlab_paths).
+    @param config_path: Path to config file
+    @param verbose: Whether to print verbose output
+    @return: (success, overleaf_id, gitlab_paths)
+    """
     print("\n=== Neues Projekt-Mapping hinzufügen ===")
     
     # Get Overleaf project ID
@@ -241,7 +259,11 @@ def add_single_mapping(config_path: str, verbose: bool) -> tuple[bool, str, str]
         return False, "", ""
 
 def edit_existing_mappings(config_path: str, verbose: bool) -> bool:
-    """Edit existing project mappings."""
+    """Edit existing project mappings.
+    @param config_path: Path to config file
+    @param verbose: Whether to print verbose output
+    @return: Success status
+    """
     config = read_config(config_path, verbose)
     projects = get_overleaf_projects(config, verbose=False)
     
