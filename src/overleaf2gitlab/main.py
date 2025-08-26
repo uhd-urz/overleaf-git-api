@@ -2,57 +2,30 @@ from .parser import get_args, check_global_arguments
 from .config import read_config, get_overleaf_projects, validate_config, interactive_config_setup
 from .backup import backup_overleaf_project
 from configparser import ConfigParser
+import os
 
 
 def handle_init_command(config_path: str, verbose: bool) -> bool:
     """
-    Handle the init command for configuration validation and setup.
+    Handle the config command for configuration validation and setup.
     @param config_path: Path to config file
     @param verbose: Whether to print verbose output
     @return: Success status
     """
-    print("=== Overleaf2GitLab Konfiguration ===\n")
+    print("=== Overleaf2GitLab Konfigurationsverwaltung ===\n")
+    
+    # Always show config path
+    expanded_path = os.path.expanduser(config_path)
+    print(f"Konfigurationsdatei: {expanded_path}")
     
     # Validate existing config
     is_valid, message = validate_config(config_path, verbose)
     
-    if is_valid:
-        print(f"✓ {message}")
-        
-        # Ask if user wants to add more projects
-        try:
-            add_more = input("\nWeiteres Projekt-Mapping hinzufügen? (j/N): ").strip().lower()
-            if add_more in ['j', 'ja', 'y', 'yes']:
-                return interactive_config_setup(config_path, verbose)
-            else:
-                print("Konfiguration ist bereits gültig. Keine Änderungen vorgenommen.")
-                return True
-        except KeyboardInterrupt:
-            print("\nAbgebrochen.")
-            return True
+    if verbose:
+        print(f"Konfigurationsstatus: {message}")
     
-    else:
-        print(f"⚠ {message}")
-        print("\nMögliche Aktionen:")
-        print("1. Neue Konfiguration erstellen")
-        print("2. Bestehendes Projekt-Mapping hinzufügen")
-        print("3. Abbrechen")
-        
-        try:
-            choice = input("\nWählen Sie eine Option (1-3): ").strip()
-            
-            if choice == '1' or choice == '2':
-                return interactive_config_setup(config_path, verbose)
-            elif choice == '3':
-                print("Abgebrochen.")
-                return False
-            else:
-                print("Ungültige Auswahl.")
-                return False
-                
-        except KeyboardInterrupt:
-            print("\nAbgebrochen.")
-            return False
+    # Start interactive configuration
+    return interactive_config_setup(config_path, verbose)
 
 def backup_single_project(overleaf_id: str, available_projects: dict[str, str], cache_dir: str, clean: bool, verbose: bool):
     # check if overleaf id is a key in available_projects
