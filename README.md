@@ -30,7 +30,13 @@ git clone <repository-url>
 cd urz-sb-fire-overleafgitapi
 
 # Installation über pip
-pip install .
+python3 -m pip install . --user --break-system-packages
+```
+Falls ein Berechtigungsfehler auftritt, prüfen Sie bitte die Umgebung (vorzugsweise in einem Virtualenv installieren). Bei Bedarf: `sudo chmod -R a+rX /usr/local/lib/python3.12/dist-packages`
+
+## Uninstallation
+```bash
+python3 -m pip uninstall overleaf2gitlab --break-system-packages
 ```
 
 ## Konfiguration
@@ -69,10 +75,12 @@ Erstellen Sie eine Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/con
 
 ```ini
 [repos]
-# Mapping: Overleaf-Projekt-ID = GitLab-Repository-Pfad(e)
-; noch angemerrt `gitlab-urz` ist ein ssh alias
-689b16659d1d083b3131e989 = gitlab-urz/username/project1.git
-662a5ab30650c57e5355029b = gitlab-urz/username/project2.git, gitlab-urz/backup/project2.git
+; Mapping: <Overleaf-Projekt-ID> = <SSH-ALIAS>/PATH/TO/REPO.git
+
+; Beispielsweise das Tagungsband für die E-Sciece-Tage
+662a5ab30650c57e5355029b = gitlab-urz/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-tagungsband.git
+
+;662a5ab30650c57e5355029b = gitlab-urz/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-tagungsband.git, gitlab-urz/HeuschkelFlorian/EST2025Tagungsband.git, gitlab-urz/MackPhilip/tagungsband.git
 ```
 
 **Erklärung der Konfiguration:**
@@ -208,7 +216,7 @@ make setup
 
 - `main.py`: Haupt-Einstiegspunkt und Koordination
 - `parser.py`: Argument-Parsing und Validierung
-- `config.py`: Konfigurationsdatei-Handling
+- `config.py`: Konfigurationsdatei-Handling + Helper für erstellen einer Konfigurationsdatei (beta)
 - `backup.py`: Git-Operationen und Backup-Logik
 
 ## Lizenz
