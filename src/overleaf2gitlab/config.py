@@ -63,7 +63,7 @@ def validate_config(config_path: str, verbose: bool) -> tuple[bool, str]:
     # Validate format of mappings
     for overleaf_id, gitlab_paths in projects.items():
         if not overleaf_id.strip():
-            return False, f"Leere Overleaf-ID gefunden"
+            return False, "Leere Overleaf-ID gefunden"
         
         if not gitlab_paths.strip():
             return False, f"Leere GitLab-Pfade für Projekt {overleaf_id}"
@@ -131,51 +131,170 @@ def list_existing_mappings(config: configparser.ConfigParser) -> None:
     projects = get_overleaf_projects(config, verbose=False)
     
     if not projects:
-        print("Keine Projekt-Mappings gefunden.")
+        print("\n✗ Keine Projekt-Mappings gefunden")
         return
     
     print("\n=== Bestehende Projekt-Mappings ===")
     for i, (overleaf_id, gitlab_paths) in enumerate(projects.items(), 1):
         print(f"{i}. Overleaf-ID: {overleaf_id}")
-        print(f"   GitLab-Pfade: {gitlab_paths}")
+        print("   GitLab-Pfade:")
+        for j, path in enumerate(gitlab_paths.split(','), 1):
+            print(f"      {j}. {path.strip()}")
         print()
 
-def delete_project_mapping(config_path: str, overleaf_id: str, verbose: bool) -> bool:
-    """Delete a project mapping from config.
+def edit_gitlab_paths(config: configparser.ConfigParser, config_path: str, overleaf_id: str, verbose: bool) -> bool:
+    """Edit GitLab paths for a specific Overleaf project.
+    @param config: ConfigParser object
     @param config_path: Path to config file
     @param overleaf_id: Overleaf project ID
     @param verbose: Whether to print verbose output
     @return: Success status
     """
     try:
-        expanded_path = os.path.expanduser(config_path)
-        
-        if not os.path.exists(expanded_path):
-            print("✗ Konfigurationsdatei nicht gefunden")
-            return False
-        
-        config = configparser.ConfigParser()
-        config.read(expanded_path)
-        
         if 'repos' not in config or overleaf_id not in config['repos']:
-            print(f"✗ Projekt {overleaf_id} nicht in Konfiguration gefunden")
+            print(f"✗ Overleaf-Projekt {overleaf_id} nicht in Konfiguration gefunden")
+            return False
+
+        while True:
+            # Get current paths
+            gitlab_paths = [p.strip() for p in config['repos'][overleaf_id].split(',')]
+            
+            # Display main menu
+            print("\n=== GitLab-Pfade bearbeiten ===")
+            print(f"Overleaf-ID: {overleaf_id}")
+            print("Aktuelle GitLab-Pfade:")
+            for i, path in enumerate(gitlab_paths, 1):
+                print(f"   {i}. {path}")
+            
+            print("\nOptionen:")
+            print("   1. GitLab-Pfad hinzufügen")
+            print("   2. GitLab-Pfad entfernen")
+            print("   3. Alle GitLab-Pfade neu setzen")
+            print("   4. Fertig")
+            print("   5. Zurück")
+            
+            try:
+                choice = int(input("\nAktion auswählen (1-5): "))
+                if choice < 1 or choice > 5:
+                    raise ValueError()
+            except ValueError:
+                print("✗ Ungültige Eingabe")
+                continue
+            
+            if choice == 1:  # Add path
+                new_path = input("\nNeuer GitLab-Pfad: ").strip()
+                if new_path:
+                    gitlab_paths.append(new_path)
+                    config['repos'][overleaf_id] = ', '.join(gitlab_paths)
+                    with open(config_path, 'w') as f:
+                        config.write(f)
+                    print(f"\n✓ Pfad '{new_path}' wurde hinzugefügt")
+            
+            elif choice == 2:  # Remove path
+                if not gitlab_paths:
+                    print("\n✗ Keine GitLab-Pfade vorhanden")
+                    continue
+                    
+                print("\n--- GitLab-Pfad entfernen ---")
+                print("Aktuelle Pfade:")
+                for i, path in enumerate(gitlab_paths, 1):
+                    print(f"   {i}. {path}")
+                print(f"   {len(gitlab_paths) + 1}. Abbrechen")
+                
+                try:
+                    del_choice = int(input(f"\nPfad auswählen (1-{len(gitlab_paths) + 1}): "))
+                    if del_choice < 1 or del_choice > len(gitlab_paths) + 1:
+                        raise ValueError()
+                    if del_choice == len(gitlab_paths) + 1:  # Cancel
+                        continue
+                    
+                    removed_path = gitlab_paths.pop(del_choice - 1)
+                    
+                    # Check if this was the last path
+                    if not gitlab_paths:
+                        confirm = input("\nHinweis: Keine GitLab-Pfade mehr vorhanden.\n" +
+                                     f"Möchten Sie die Overleaf-ID {overleaf_id} komplett löschen? (j/n): ")
+                        if confirm.lower() == 'j':
+                            del config['repos'][overleaf_id]
+                            print(f"\n✓ Overleaf-Projekt {overleaf_id} wurde komplett gelöscht")
+                            with open(config_path, 'w') as f:
+                                config.write(f)
+                            return True
+                        else:
+                            # Restore the removed path if user doesn't want to delete everything
+                            gitlab_paths.append(removed_path)
+                            print("\n✗ Löschvorgang abgebrochen")
+                            continue
+                    
+                    # Update config with remaining paths
+                    config['repos'][overleaf_id] = ', '.join(gitlab_paths)
+                    with open(config_path, 'w') as f:
+                        config.write(f)
+                    print(f"\n✓ Pfad '{removed_path}' wurde entfernt")
+                    print("\nAktuelle GitLab-Pfade:")
+                    for i, path in enumerate(gitlab_paths, 1):
+                        print(f"   {i}. {path}")
+                        
+                except ValueError:
+                    print("✗ Ungültige Eingabe")
+                    continue
+            
+            elif choice == 3:  # Reset all paths
+                new_paths = input("\nNeue GitLab-Pfade (kommagetrennt): ").strip()
+                if new_paths:
+                    config['repos'][overleaf_id] = new_paths
+                    with open(config_path, 'w') as f:
+                        config.write(f)
+                    print("\n✓ GitLab-Pfade wurden aktualisiert")
+            
+            elif choice in (4, 5):  # Done or Back
+                return True
+                
+    except Exception as e:
+        print(f"✗ Fehler beim Bearbeiten der GitLab-Pfade: {str(e)}")
+        return False
+
+def edit_existing_mappings(config_path: str, verbose: bool) -> bool:
+    """Edit existing project mappings.
+    @param config_path: Path to config file
+    @param verbose: Whether to print verbose output
+    @return: Success status
+    """
+    try:
+        config = read_config(config_path, verbose)
+        projects = get_overleaf_projects(config, verbose)
+        
+        if not projects:
+            print("✗ Keine Projekt-Mappings gefunden")
             return False
         
-        # Remove the mapping
-        config.remove_option('repos', overleaf_id)
-        
-        # Write back to file
-        with open(expanded_path, 'w') as configfile:
-            config.write(configfile)
-        
-        if verbose:
-            print(f"✓ Projekt-Mapping gelöscht: {overleaf_id}")
-        
-        return True
-        
+        while True:
+            list_existing_mappings(config)
+            
+            # Get Overleaf ID selection
+            print("\nWählen Sie ein Projekt zum Bearbeiten (oder 'q' zum Beenden): ")
+            choice = input("Overleaf-ID: ").strip().lower()
+            
+            if choice == 'q':
+                return True
+            
+            if choice not in projects:
+                print(f"✗ Ungültige Overleaf-ID: {choice}")
+                continue
+            
+            # Edit paths for selected project
+            if not edit_gitlab_paths(config, config_path, choice, verbose):
+                print("✗ Bearbeitung fehlgeschlagen")
+                continue
+                
+            # Reload config in case of changes
+            config = read_config(config_path, verbose)
+                
     except Exception as e:
-        print(f"✗ Fehler beim Löschen des Projekt-Mappings: {e}")
+        print(f"✗ Fehler beim Bearbeiten der Mappings: {str(e)}")
         return False
+        
+    return True
 
 def get_user_choice(prompt: str, valid_choices: list[str], allow_empty: bool = False) -> str:
     """Get user input with validation.
@@ -185,19 +304,19 @@ def get_user_choice(prompt: str, valid_choices: list[str], allow_empty: bool = F
     @return: User's choice
     """
     while True:
-        try:
-            choice = input(prompt).strip().lower()
-            
-            if allow_empty and not choice:
-                return ""
-
-            if choice in [c.lower() for c in valid_choices]:
+        choice = input(prompt).strip().lower()
+        
+        if not choice:
+            if allow_empty:
                 return choice
+            print("✗ Keine Eingabe")
+            continue
             
-            print(f"Ungültige Eingabe. Gültige Optionen: {', '.join(valid_choices)}")
+        if choice not in valid_choices:
+            print("✗ Ungültige Eingabe")
+            continue
             
-        except KeyboardInterrupt:
-            return "exit"
+        return choice
 
 def add_single_mapping(config_path: str, verbose: bool) -> tuple[bool, str, str]:
     """Add a single project mapping. Returns (success, overleaf_id, gitlab_paths).
@@ -208,11 +327,11 @@ def add_single_mapping(config_path: str, verbose: bool) -> tuple[bool, str, str]
     print("\n=== Neues Projekt-Mapping hinzufügen ===")
     
     # Get Overleaf project ID
-    print("Schritt 1: Overleaf-Projekt-ID")
+    print("\nSchritt 1: Overleaf-Projekt-ID")
     print("Tipp: Finden Sie die ID in der URL Ihres Overleaf-Projekts")
     print("Beispiel: https://www.overleaf.com/project/662a5ab30650c57e5355029b")
     print("         Die ID wäre: 662a5ab30650c57e5355029b")
-    print("Eingabe: [Overleaf-ID] oder 'exit' zum Abbrechen")
+    print("\nEingabe: [Overleaf-ID] oder 'exit' zum Abbrechen")
     
     overleaf_id = input("\nOverleaf-Projekt-ID: ").strip()
     if not overleaf_id or overleaf_id.lower() == 'exit':
@@ -222,25 +341,24 @@ def add_single_mapping(config_path: str, verbose: bool) -> tuple[bool, str, str]
     print(f"\nSchritt 2: GitLab-Repository-Pfade für '{overleaf_id}'")
     print("Format: ssh-alias/namespace/repository.git")
     print("Beispiel: gitlab-urz/MackPhilip/mein-projekt.git")
-    print("Eingabe: [GitLab-Pfad], 'done' zum Beenden, 'exit' zum Abbrechen")
+    print("\nEingabe: [GitLab-Pfad], 'done' zum Beenden, 'exit' zum Abbrechen")
     
     gitlab_paths = []
     while True:
-        path = input(f"\nGitLab-Pfad #{len(gitlab_paths)+1}: ").strip()
+        path = input("\nGitLab-Pfad: ").strip()
         
-        if path.lower() == 'exit':
+        if not path or path.lower() == 'exit':
             return False, "", ""
-        elif path.lower() == 'done':
-            if gitlab_paths:
-                break
-            else:
-                print("✗ Mindestens ein GitLab-Pfad erforderlich")
+            
+        if path.lower() == 'done':
+            if not gitlab_paths:
+                print("✗ Sie müssen mindestens einen GitLab-Pfad angeben")
                 continue
-        elif path:
-            gitlab_paths.append(path)
-            print(f"✓ Pfad hinzugefügt: {path}")
-        else:
-            print("Leere Eingabe ignoriert. Verwenden Sie 'done' zum Beenden.")
+            break
+            
+        gitlab_paths.append(path)
+        print(f"✓ Pfad hinzugefügt: {path}")
+        print("Geben Sie 'done' ein, wenn Sie fertig sind")
     
     # Confirm before saving
     gitlab_paths_str = ", ".join(gitlab_paths)
@@ -250,91 +368,12 @@ def add_single_mapping(config_path: str, verbose: bool) -> tuple[bool, str, str]
     
     choice = get_user_choice("\nMapping speichern? (j/n): ", ['j', 'ja', 'y', 'yes', 'n', 'no', 'nein'])
     if choice in ['j', 'ja', 'y', 'yes']:
-        success = add_project_mapping(config_path, overleaf_id, gitlab_paths_str, verbose)
-        if success:
-            print(f"✓ Projekt-Mapping gespeichert: {overleaf_id}")
-        return success, overleaf_id, gitlab_paths_str
+        return True, overleaf_id, gitlab_paths_str
     else:
-        print("Abgebrochen.")
         return False, "", ""
 
-def edit_existing_mappings(config_path: str, verbose: bool) -> bool:
-    """Edit existing project mappings.
-    @param config_path: Path to config file
-    @param verbose: Whether to print verbose output
-    @return: Success status
-    """
-    config = read_config(config_path, verbose)
-    projects = get_overleaf_projects(config, verbose=False)
-    
-    if not projects:
-        print("Keine Projekt-Mappings zum Bearbeiten gefunden.")
-        return True
-    
-    while True:
-        print("\n=== Bestehende Projekt-Mappings bearbeiten ===")
-        project_list = list(projects.items())
-        
-        for i, (overleaf_id, gitlab_paths) in enumerate(project_list, 1):
-            print(f"{i}. {overleaf_id} → {gitlab_paths}")
-        
-        print(f"{len(project_list)+1}. Zurück zum Hauptmenü")
-        
-        try:
-            choice = input(f"\nProjekt auswählen (1-{len(project_list)+1}): ").strip()
-            
-            if not choice or choice == str(len(project_list)+1):
-                return True
-            
-            index = int(choice) - 1
-            if 0 <= index < len(project_list):
-                overleaf_id, gitlab_paths = project_list[index]
-                
-                print(f"\nGewähltes Projekt: {overleaf_id}")
-                print(f"Aktuelle GitLab-Pfade: {gitlab_paths}")
-                
-                action = get_user_choice(
-                    "\nAktion wählen (edit/delete/back): ",
-                    ['edit', 'delete', 'back']
-                )
-                
-                if action == 'edit':
-                    print(f"\nNeue GitLab-Pfade eingeben (aktuell: {gitlab_paths})")
-                    print("Leer lassen um beizubehalten, 'exit' zum Abbrechen")
-                    new_paths = input("Neue GitLab-Pfade: ").strip()
-                    
-                    if new_paths and new_paths.lower() != 'exit':
-                        if add_project_mapping(config_path, overleaf_id, new_paths, verbose):
-                            print(f"✓ Projekt {overleaf_id} aktualisiert")
-                            projects[overleaf_id] = new_paths
-                        else:
-                            print(f"✗ Fehler beim Aktualisieren von {overleaf_id}")
-                
-                elif action == 'delete':
-                    confirm = get_user_choice(
-                        f"Projekt '{overleaf_id}' wirklich löschen? (j/n): ",
-                        ['j', 'ja', 'y', 'yes', 'n', 'no', 'nein']
-                    )
-                    
-                    if confirm in ['j', 'ja', 'y', 'yes']:
-                        if delete_project_mapping(config_path, overleaf_id, verbose):
-                            print(f"✓ Projekt {overleaf_id} gelöscht")
-                            del projects[overleaf_id]
-                        else:
-                            print(f"✗ Fehler beim Löschen von {overleaf_id}")
-                
-                elif action == 'back':
-                    continue
-            else:
-                print("Ungültige Auswahl.")
-                
-        except (ValueError, KeyboardInterrupt):
-            print("\nZurück zum Hauptmenü.")
-            return True
-
 def interactive_config_setup(config_path: str, verbose: bool) -> bool:
-    """
-    Interactive setup for configuration with full menu system.
+    """Interactive setup for configuration with full menu system.
     @param config_path: Path to config file
     @param verbose: Whether to print verbose output
     @return: Success status
@@ -343,45 +382,40 @@ def interactive_config_setup(config_path: str, verbose: bool) -> bool:
     
     try:
         while True:
-            # Load current config
-            config = read_config(config_path, verbose)
-            projects = get_overleaf_projects(config, verbose=False)
+            print("\nOptionen:")
+            print("1. Neues Projekt-Mapping hinzufügen")
+            print("2. Bestehende Mappings bearbeiten")
+            print("3. Beenden")
             
-            # Show current state
-            if projects:
-                list_existing_mappings(config)
-                action = get_user_choice(
-                    "Aktion wählen (add/edit/done): ",
-                    ['add', 'edit', 'done', 'exit']
-                )
-            else:
-                print("Keine Konfiguration gefunden oder Datei ist leer.")
-                action = get_user_choice(
-                    "Möchten Sie Einträge hinzufügen oder beenden? (add/exit): ",
-                    ['add', 'exit']
-                )
+            try:
+                choice = int(input("\nAktion auswählen (1-3): "))
+                if choice < 1 or choice > 3:
+                    raise ValueError()
+            except ValueError:
+                print("✗ Ungültige Eingabe")
+                continue
             
-            if action in ['exit', 'done']:
-                print("Konfiguration beendet.")
-                return True
-            
-            elif action == 'add':
-                success, _, _ = add_single_mapping(config_path, verbose)
+            if choice == 1:  # Add new mapping
+                success, overleaf_id, gitlab_paths = add_single_mapping(config_path, verbose)
                 if success:
-                    # Ask if user wants to add more
-                    more = get_user_choice(
-                        "\nWeiteres Projekt hinzufügen? (add/done): ",
-                        ['add', 'done', 'exit']
-                    )
-                    if more in ['done', 'exit']:
-                        return True
+                    if add_project_mapping(config_path, overleaf_id, gitlab_paths, verbose):
+                        print("\n✓ Projekt-Mapping erfolgreich gespeichert")
+                    else:
+                        print("\n✗ Fehler beim Speichern des Projekt-Mappings")
             
-            elif action == 'edit':
+            elif choice == 2:  # Edit existing mappings
                 edit_existing_mappings(config_path, verbose)
             
+            elif choice == 3:  # Exit
+                print("\nKonfigurationsverwaltung beendet")
+                return True
+            
     except KeyboardInterrupt:
-        print("\n\nKonfiguration abgebrochen.")
-        return True
-    except Exception as e:
-        print(f"\n✗ Fehler bei der interaktiven Konfiguration: {e}")
+        print("\n\nKonfigurationsverwaltung abgebrochen")
         return False
+        
+    except Exception as e:
+        print(f"\n✗ Unerwarteter Fehler: {str(e)}")
+        return False
+    
+    return True
