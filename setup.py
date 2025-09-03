@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="overleaf2gitlab",
-    version="1.0.2",
+    version="1.1.0",
     author="Philip Mack",
     author_email="philip.mack@urz.uni-heidelberg.de",
     description="Tool zur automatischen Sicherung von Overleaf-Projekten in GitLab-Repositories",

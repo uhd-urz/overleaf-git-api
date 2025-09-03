@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "overleaf2gitlab"
-version = "1.0.0"
+version = "1.1.0"  # Updated for interactive config feature
 authors = [
     {name = "Philip Mack", email = "philip.mack@urz.uni-heidelberg.de"},
 ]
