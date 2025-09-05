@@ -228,7 +228,7 @@ def edit_gitlab_paths(config: configparser.ConfigParser, config_path: str, overl
                     
                     # Update config with remaining paths
                     config['repos'][overleaf_id] = ', '.join(gitlab_paths)
-                    with open(config_path, 'w') as f:
+                    with open(os.path.expanduser(config_path), 'w') as f:
                         config.write(f)
                     print(f"\n✓ Pfad '{removed_path}' wurde entfernt")
                     print("\nAktuelle GitLab-Pfade:")
@@ -243,7 +243,7 @@ def edit_gitlab_paths(config: configparser.ConfigParser, config_path: str, overl
                 new_paths = input("\nNeue GitLab-Pfade (kommagetrennt): ").strip()
                 if new_paths:
                     config['repos'][overleaf_id] = new_paths
-                    with open(config_path, 'w') as f:
+                    with open(os.path.expanduser(config_path), 'w') as f:
                         config.write(f)
                     print("\n✓ GitLab-Pfade wurden aktualisiert")
             
