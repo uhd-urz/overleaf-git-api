@@ -1,52 +1,120 @@
-# Overleaf to GitLab Backup Tool
+# Overleaf To GitLab Backup CLI
 
-Ein Python-Tool zur automatischen Sicherung von Overleaf-Projekten in GitLab-Repositories über die Git-API von Overleaf.
+Ein schlankes Python‑Werkzeug, das Overleaf‑Projekte automatisiert in GitLab‑Repositories spiegelt – per Overleaf‑Git‑API und normalem `git push`.
+
+---
+
+## Inhaltsverzeichnis
+- [Beschreibung](#beschreibung)
+- [Voraussetzungen](#voraussetzungen)
+- [Installation](#installation)
+- [Deinstallation](#deinstallation)
+- [Schnellstart](#schnellstart)
+- [Konfiguration](#konfiguration)
+  - [SSH-Konfiguration](#1-ssh-konfiguration)
+  - [Overleaf-Anmeldedaten](#2-overleaf-anmeldedaten)
+  - [Konfigurationsdatei](#3-konfigurationsdatei)
+- [Verwendung](#verwendung)
+- [Beispiele](#beispiele)
+- [Funktionsweise](#funktionsweise)
+- [Verzeichnisstruktur](#verzeichnisstruktur)
+- [Fehlerbehebung](#fehlerbehebung)
+- [Automatisierung (Cron)](#automatisierung-cron)
+- [Entwicklung](#entwicklung)
+- [Lizenz](#lizenz)
+- [Autoren & Support](#autoren--support)
+- [Beitragen](#beitragen)
+
+---
 
 ## Beschreibung
 
-Dieses Tool ermöglicht es, Overleaf-Projekte automatisch als Backup in GitLab-Repositories zu synchronisieren. Es nutzt die Git-API von Overleaf, um Projekte als Git-Repositories zu klonen und diese dann in ein oder mehrere GitLab-Repositories zu pushen.
+Dieses CLI‑Tool synchronisiert Overleaf‑Projekte als Backup in ein oder mehrere GitLab‑Repositories. Es klont Projekte über die Overleaf‑Git‑API und pusht anschließend in die von Ihnen definierten Ziele. Typische Einsatzfälle sind redundante Backups, Team‑Spiegel oder Archivierung.
 
-### Features
+### Merkmale
+- Interaktive Konfigurationsverwaltung (`overleaf2gitlab config`)
+- Mehrere GitLab‑Ziele pro Overleaf‑Projekt
+- Optionale Cache‑Bereinigung
+- Ausführliches Logging via `--verbose`
+- Robuste Fehlerbehandlung
+- Einfache, konsistente CLI
 
-- 🔄 Automatische Synchronisation von Overleaf-Projekten mit GitLab
-- 📁 Unterstützung für mehrere Backup-Ziele pro Projekt
-- 🔧 Konfigurierbare Projekt-Mappings über INI-Datei
-- 🧹 Optionale Cache-Bereinigung nach dem Backup
-- 📝 Verbose-Modus für detaillierte Ausgaben
-- 🔐 SSH-basierte Authentifizierung für GitLab
+---
 
 ## Voraussetzungen
 
-- Python 3.6+
+- Python 3.8+
 - Git
-- SSH-Zugang zu GitLab-Instanzen
-- Zugang zu Overleaf-Projekten
+- SSH‑Zugang zu den Ziel‑GitLab‑Instanzen
+- Zugriff auf die Overleaf‑Projekte (Git‑Token)
+
+> Hinweis: Ältere Python‑Versionen (z. B. 3.6) werden nicht mehr empfohlen.
+
+---
 
 ## Installation
 
+Es gibt zwei bewährte Wege:
+
+### 1) In virtueller Umgebung (empfohlen)
 ```bash
 # Repository klonen
 git clone <repository-url>
 cd urz-sb-fire-overleafgitapi
 
-# Installation über pip
-python3 -m pip install . --user --break-system-packages
-```
-Falls ein Berechtigungsfehler auftritt, prüfen Sie bitte die Umgebung (vorzugsweise in einem Virtualenv installieren). Bei Bedarf: `sudo chmod -R a+rX /usr/local/lib/python3.12/dist-packages`
+# Virtuelle Umgebung erstellen & aktivieren
+python -m venv .venv
+source .venv/bin/activate     # Linux/macOS
+# ODER
+.venv\Scripts\activate      # Windows
 
-## Uninstallation
-```bash
-python3 -m pip uninstall overleaf2gitlab --break-system-packages
+# Paket im Editiermodus installieren
+pip install -e .
 ```
+
+### 2) Benutzerlokal installieren
+```bash
+git clone <repository-url>
+cd urz-sb-fire-overleafgitapi
+pip install --user -e .
+```
+
+Nach der Installation steht der Befehl `overleaf2gitlab` systemweit zur Verfügung.
+
+---
+
+## Deinstallation
+```bash
+python -m pip uninstall overleaf2gitlab
+```
+
+---
+
+## Schnellstart
+
+1. **Konfiguration starten**
+   ```bash
+   overleaf2gitlab config
+   ```
+2. **Projekt‑Mapping anlegen**
+   - Overleaf‑Projekt‑ID aus der URL kopieren (z. B. `662a5ab30650c57e5355029b`).
+   - Ein oder mehrere GitLab‑Ziele (per SSH‑Alias) hinterlegen.
+3. **Backup ausführen**
+   ```bash
+   # einzelnes Projekt
+   overleaf2gitlab backup-single 662a5ab30650c57e5355029b
+
+   # alle Projekte
+   overleaf2gitlab backup-all
+   ```
+
+---
 
 ## Konfiguration
 
-### 1. SSH-Konfiguration
+### 1) SSH‑Konfiguration
 
-#### SSH-Aliase einrichten
-
-Erstellen Sie SSH-Aliase für Ihre GitLab-Instanzen in `~/.ssh/config`:
-
+**SSH‑Alias anlegen** in `~/.ssh/config`:
 ```
 Host gitlab-urz
     HostName gitlab.urz.uni-heidelberg.de
@@ -54,186 +122,181 @@ Host gitlab-urz
     IdentityFile ~/.ssh/id_rsa_gitlab
 ```
 
-#### SSH-Keys zum SSH-Agent hinzufügen
-
-**Wichtig:** SSH-Keys müssen über `ssh-add` im SSH-Agent geladen sein:
-
+**SSH‑Key im Agent laden**:
 ```bash
-# SSH-Agent starten (falls nicht bereits aktiv)
 eval "$(ssh-agent -s)"
-
-# SSH-Key hinzufügen
 ssh-add ~/.ssh/id_rsa_gitlab
-
-# Überprüfen, welche Keys geladen sind
-ssh-add -l
+ssh-add -l   # geladene Keys prüfen
 ```
 
-### 2. Konfigurationsdatei
+### 2) Overleaf‑Anmeldedaten
 
-Erstellen Sie eine Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/config.ini`):
-
-```ini
-[repos]
-; Mapping: <Overleaf-Projekt-ID> = <SSH-ALIAS>/PATH/TO/REPO.git
-
-; Beispielsweise das Tagungsband für die E-Sciece-Tage
-662a5ab30650c57e5355029b = gitlab-urz/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-tagungsband.git
-
-;662a5ab30650c57e5355029b = gitlab-urz/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-tagungsband.git, gitlab-urz/HeuschkelFlorian/EST2025Tagungsband.git, gitlab-urz/MackPhilip/tagungsband.git
-```
-
-**Erklärung der Konfiguration:**
-- **Overleaf-Projekt-ID**: Finden Sie in der URL Ihres Overleaf-Projekts (z.B. `https://www.overleaf.com/project/662a5ab30650c57e5355029b`)
-- **GitLab-Repository-Pfad**: Format `ssh-alias/namespace/repository.git`
-- **SSH-Alias**: Muss in `~/.ssh/config` definiert sein (hier: `gitlab-urz`)
-- **Mehrere Ziele**: Durch Komma getrennt für redundante Backups
-
-### 3. Overleaf-Anmeldedaten
-
+Legen Sie eine Credentials‑Datei mit Token an:
 ```bash
-# Verzeichnis erstellen
 mkdir -p ~/.gitconfig.d
-
-# Credentials-Datei mit Token erstellen
-cat > ~/.gitconfig.d/overleaf << EOF
+cat > ~/.gitconfig.d/overleaf << 'EOF'
 https://git:<OVERLEAF-TOKEN>@git.overleaf.com
 EOF
-
-# Datei absichern
 chmod 600 ~/.gitconfig.d/overleaf
 ```
 
-**Sicherheitshinweise:**
-- Die Datei `~/.gitconfig.d/overleaf` sollte nur für Sie lesbar sein (`chmod 600`)
-- Fügen Sie diese Datei niemals zu einem Git-Repository hinzu
+**Sicherheit**: Die Datei `~/.gitconfig.d/overleaf` darf nur für Sie lesbar sein und gehört *nicht* ins Versionskontrollsystem.
 
+### 3) Konfigurationsdatei
+
+Standardpfad: `~/.config/overleaf2gitlab/config.ini` (INI‑Format)
+
+```ini
+[repos]
+; <Overleaf-Projekt-ID> = <SSH-ALIAS>/<Namespace>/<Repo>.git
+662a5ab30650c57e5355029b = gitlab-urz/urz-sb-fire/sg-sdm/e-science-tage/urz-sb-fire-tagungsband.git
+; mehrere Ziele per Komma trennen:
+; 662a5ab30650c57e5355029b = gitlab-urz/user/repo.git, gitlab-urz/team/backup.git
+```
+
+- **Overleaf‑Projekt‑ID**: in der Overleaf‑URL (z. B. `https://www.overleaf.com/project/<ID>`)
+- **GitLab‑Repo‑Pfad**: `ssh-alias/namespace/repository.git`
+- **Mehrere Ziele**: per Komma getrennt
+
+---
 
 ## Verwendung
 
-### Einzelnes Projekt sichern
-
+Allgemeine Befehle:
 ```bash
-overleaf2gitlab backup-single <overleaf-projekt-id>
-```
+# Interaktive Konfiguration
+overleaf2gitlab config
 
-Beispiel:
-```bash
-overleaf2gitlab backup-single 689b16659d1d083b3131e989
-```
+# Einzelnes Projekt sichern
+overleaf2gitlab backup-single <overleaf-id>
 
-### Alle konfigurierten Projekte sichern
-
-```bash
+# Alle konfigurierten Projekte sichern
 overleaf2gitlab backup-all
-```
 
-### Optionen
-
-```bash
+# Hilfe
 overleaf2gitlab --help
 ```
 
-Verfügbare globale Optionen:
-- `--verbose`: Detaillierte Ausgaben aktivieren
-- `--config PATH`: Pfad zur Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/config.ini`)
-- `--cache-dir PATH`: Cache-Verzeichnis (Standard: `~/.local/share/overleaf2gitlab`)
-- `--clean-cache`: Cache nach dem Backup löschen
+Globale Optionen:
+- `--verbose` – detaillierte Ausgaben
+- `--config PATH` – alternativer Pfad zur Konfigurationsdatei (Standard: `~/.config/overleaf2gitlab/config.ini`)
+- `--cache-dir PATH` – Cache‑Verzeichnis (Standard: `~/.local/share/overleaf2gitlab`)
+- `--clean` – Cache nach erfolgreichem Backup löschen
 
-### Beispiele
+---
+
+## Beispiele
 
 ```bash
-# Verbose-Modus mit benutzerdefinierter Konfiguration
-python main.py --verbose --config ./my-config.ini backup-single 689b16659d1d083b3131e989
+# Einzelnes Projekt im Verbose‑Modus mit eigener Konfig
+overleaf2gitlab --verbose --config ./my-config.ini backup-single 689b16659d1d083b3131e989
 
-# Alle Projekte mit Cache-Bereinigung
-python main.py --clean-cache backup-all
+# Alle Projekte sichern und Cache bereinigen
+overleaf2gitlab --clean backup-all
 
-# Benutzerdefiniertes Cache-Verzeichnis
-python main.py --cache-dir /tmp/overleaf-backup backup-all
+# Benutzerdefiniertes Cache-Verzeichnis nutzen
+overleaf2gitlab --cache-dir /tmp/overleaf-backup backup-all
 ```
+
+---
 
 ## Funktionsweise
 
-1. **Git-Repository-Setup**: Für jedes Overleaf-Projekt wird ein lokales Git-Repository im Cache-Verzeichnis erstellt
-2. **Remote-Konfiguration**: 
-   - `origin`: Overleaf Git-API (`https://git.overleaf.com/<projekt-id>`)
-   - `backup0`, `backup1`, ...: Konfigurierte GitLab-Repositories
-3. **Synchronisation**:
-   - Aktualisierung aller Remotes
-   - Pull vom Overleaf-Repository (versucht `main` und `master` Branches)
-   - Fetch von Tags
-   - Push zu allen Backup-Repositories
+1. **Lokales Repo vorbereiten** – für jede Overleaf‑ID wird im Cache ein Git‑Repo angelegt.
+2. **Remotes setzen**
+   - `origin` → Overleaf (`https://git.overleaf.com/<projekt-id>`)
+   - `backup0`, `backup1`, … → Ihre GitLab‑Ziele
+3. **Synchronisieren**
+   - Remotes aktualisieren
+   - Pull von Overleaf (Branch `main` bzw. Fallback `master`)
+   - Tags holen
+   - Push in alle Backup‑Remotes
+
+---
 
 ## Verzeichnisstruktur
 
 ```
-~/.local/share/overleaf2gitlab/    # Cache-Verzeichnis
-├── overleaf_<projekt-id-1>/       # Git-Repository für Projekt 1
-├── overleaf_<projekt-id-2>/       # Git-Repository für Projekt 2
+~/.cache/overleaf2gitlab/          # Cache
+├── overleaf_<projekt-id-1>/
+├── overleaf_<projekt-id-2>/
 └── ...
 
-~/.config/overleaf2gitlab/         # Konfiguration
-└── config.ini                     # Haupt-Konfigurationsdatei
+~/.config/overleaf2gitlab/
+└── config.ini                     # Hauptkonfiguration
 
-~/.gitconfig.d/                    # Git-Anmeldedaten
-└── overleaf                       # Gespeicherte Overleaf-Credentials
+~/.gitconfig.d/
+└── overleaf                       # Overleaf-Credentials
 ```
+
+Projektstruktur (im Repository):
+```
+src/overleaf2gitlab/
+├── __init__.py
+├── main.py           # CLI-Einstiegspunkt
+├── parser.py         # Argument-Parsing
+├── backup/           # Backup-Funktionalität
+│   ├── __init__.py
+│   ├── git.py        # Git-Operationen
+│   └── operations.py # Backup-Logik
+└── config/           # Konfigurationsverwaltung
+    ├── __init__.py
+    ├── manager.py    # Interaktive Konfiguration
+    ├── operations.py # Basis-Operationen
+    └── validation.py # Validierung
+```
+
+---
 
 ## Fehlerbehebung
 
-### Häufige Probleme
+**SSH-Authentifizierung fehlgeschlagen**
+- SSH‑Config und Keys prüfen
+- Läuft der Agent? `ssh-add -l`
 
-1. **SSH-Authentifizierung fehlgeschlagen**
-   - Überprüfen Sie Ihre SSH-Konfiguration und -Keys
-   - Stellen Sie sicher, dass der SSH-Agent läuft: `ssh-add -l`
+**Overleaf‑Login schlägt fehl**
+- Token bzw. `~/.gitconfig.d/overleaf` prüfen
+- Datei ggf. löschen und neu anlegen
 
-2. **Overleaf-Anmeldung fehlgeschlagen**
-   - Überprüfen Sie Ihre Anmeldedaten
-   - Löschen Sie `~/.gitconfig.d/overleaf` für eine neue Anmeldung
+**Projekt nicht gefunden**
+- Overleaf‑ID korrekt?
+- Haben Sie Zugriff auf das Projekt?
 
-3. **Projekt nicht gefunden**
-   - Überprüfen Sie die Overleaf-Projekt-ID in der Konfiguration
-   - Stellen Sie sicher, dass Sie Zugriff auf das Projekt haben
+Tipp: `--verbose` liefert zusätzliche Hinweise.
 
-### Debug-Modus
+---
 
-Verwenden Sie `--verbose` für detaillierte Ausgaben:
+## Automatisierung (Cron)
 
-```bash
-python main.py --verbose backup-single <projekt-id>
+Regelmäßige Backups via Cron einrichten (Beispiel Linux, täglich 03:00):
+```cron
+0 3 * * * /usr/bin/overleaf2gitlab backup-all >> "$HOME/.local/share/overleaf2gitlab/cron.log" 2>&1
 ```
+
+---
 
 ## Entwicklung
 
-### Projekt-Setup für Entwickler
-
 ```bash
+# einmalig
 make setup
 ```
 
-### Code-Struktur
-
-- `main.py`: Haupt-Einstiegspunkt und Koordination
-- `parser.py`: Argument-Parsing und Validierung
-- `config.py`: Konfigurationsdatei-Handling + Helper für erstellen einer Konfigurationsdatei (beta)
-- `backup.py`: Git-Operationen und Backup-Logik
+---
 
 ## Lizenz
 
-TODO: geh[Lizenz-Information hier einfügen]
+*Platzhalter* – bitte Lizenz in `LICENSE` hinterlegen und hier verlinken.
 
-## Autoren
+---
 
-- **Philip Mack** - [philip.mack@urz.uni-heidelberg.de](mailto:philip.mack@urz.uni-heidelberg.de)
-- **URZ-SB-FIRE Team** - Universität Heidelberg
+## Autoren & Support
+
+- **Philip Mack** – <philip.mack@urz.uni-heidelberg.de>
+- **URZ‑SB‑FIRE Team** – Universität Heidelberg
+
+---
 
 ## Beitragen
 
-Beiträge sind willkommen! Bitte erstellen Sie einen Merge Request für Änderungen.
-
-## Support
-
-Bei Fragen oder Problemen wenden Sie sich an:
-- **Philip Mack**: [philip.mack@urz.uni-heidelberg.de](mailto:philip.mack@urz.uni-heidelberg.de)
-- **URZ-SB-FIRE Team**: Universität Heidelberg
+Merge Requests sind willkommen. Eröffnen Sie bitte vor größeren Änderungen ein Issue zur Abstimmung.
