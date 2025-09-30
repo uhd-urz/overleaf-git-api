@@ -292,7 +292,7 @@ make setup
 
 ## Autoren & Support
 
-- **Philip Mack** – <philip.mack@urz.uni-heidelberg.de>
+- **Philip Mack** – <philip.mack@urz.uni-heidelberg.de>; <philip.mack@stud.uni-heidelberg.de>
 - **URZ‑SB‑FIRE Team** – Universität Heidelberg
 
 ---
